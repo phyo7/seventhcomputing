@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <report
+        id="action_sale_order_mobile"
+        model="sale.order"
+        string="Sales Order"
+        report_type="qweb-html"
+        name="sunmi_print.report_sale_order_template_mobile"
+        file="sunmi_print.report_sale_order_template_mobile"
+        print_report_name="'Sale Order - %s' % object.name"
+        menu="False"
+    />
+    
+    <report
+        id="action_invoice_mobile"
+        model="account.move"
+        string="Invoice"
+        report_type="qweb-html"
+        name="sunmi_print.report_invoice_template_mobile"
+        file="sunmi_print.report_invoice_template_mobile"
+        print_report_name="'Invoice - %s' % object.name"
+        menu="False"
+    />
+
+    <report
+        id="action_delivery_order_mobile"
+        model="stock.picking"
+        string="Delivery Order"
+        report_type="qweb-html"
+        name="sunmi_print.report_delivery_order_template_mobile"
+        file="sunmi_print.report_delivery_order_template_mobile"
+        print_report_name="'Delivery Order - %s' % object.name"
+        menu="False"
+    />
+</odoo>
