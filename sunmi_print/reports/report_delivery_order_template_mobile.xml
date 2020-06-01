@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="sunmi_print.delivery_order_template_mobile_document">
+        <t t-call-assets="sunmi_print.sunmi_report_style" t-js="False"/>
+        <t t-call-assets="sunmi_print.sunmi_report_style" t-css="False"/>
+        <t t-call="sunmi_print.sunmi_print_layout">
+            <t t-set="o" t-value="o.with_context(lang=o.partner_id.lang)" />
+            <t t-set="partner" t-value="o.partner_id or (o.move_lines and o.move_lines[0].partner_id) or False"/>
+            <div  style="padding-top: 25px;">
+                <div class="row">
+                    <t t-if="partner" name="partner_header">
+                        <t t-set="address">
+                            <div t-esc="partner"
+                            t-options='{"widget": "contact", "fields": ["address", "name", "phone"], "no_marker": True}'/>
+                       </t>
+                    </t>
+                    <h6>
+                        <strong t-field="o.name"/>
+                    </h6>
+                    <table style="width: 100%;">
+                        <tr t-if="o.origin">
+                            <td>Order : <span t-field="o.origin" /></td>
+                        </tr>
+                        <tr t-if="o.state">
+                            <td>Shipping Date:
+                                <t t-if="o.state == 'done'">
+                                    <span t-field="o.date_done" t-options='{"format": "dd/MM/yyyy"}'/>
+                                </t>
+                                <t t-if="o.state != 'done'">
+                                    <span t-field="o.scheduled_date" t-options='{"format": "dd/MM/yyyy"}'/>
+                                </t>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="row">
+                    <table class="sunmi-table" t-if="o.state!='done'" name="stock_move_table">
+                        <thead>
+                            <tr class="border-dashed">
+                                <th><strong>Product</strong></th>
+                                <th><strong>Quantity</strong></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-set="lines" t-value="o.move_lines.filtered(lambda x: x.product_uom_qty)"/>
+                            <tr t-foreach="lines" t-as="move">
+                                <td>
+                                    <span t-field="move.product_id"/>
+                                    <t t-if="o.picking_type_code == 'outgoing'">
+                                        <br/><span t-field="move.product_id.sudo().description_pickingout"/>
+                                    </t>
+                                    <t t-if="o.picking_type_code == 'incoming'">
+                                        <br/><span t-field="move.product_id.sudo().description_pickingin"/>
+                                    </t>
+                                </td>
+                                <td class="text-right">
+                                    <span t-esc="'%.2f' % move.product_uom_qty"/>
+                                    <span t-field="move.product_uom"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table class="sunmi-table" t-if="o.move_line_ids and o.state=='done'" name="stock_move_line_table">
+                        <t t-set="has_serial_number" t-value="o.move_line_ids.mapped('lot_id')" />
+                        <thead>
+                            <tr class="border-dashed">
+                                <th><strong>Product</strong></th>
+                                <th name="lot_serial" t-if="has_serial_number" groups="stock.group_lot_on_delivery_slip">
+                                    Lot/Serial Number
+                                </th>
+                                <th class="text-center"><strong>Quantity</strong></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="o.move_line_ids" t-as="move_line">
+                                <td>
+                                    <span t-field="move_line.product_id"/>
+                                    <t t-if="o.picking_type_code == 'outgoing'">
+                                        <br/><span t-field="move_line.product_id.sudo().description_pickingout"/>
+                                    </t>
+                                    <t t-if="o.picking_type_code == 'incoming'">
+                                        <br/><span t-field="move_line.product_id.sudo().description_pickingin"/>
+                                    </t>
+                                </td>
+                                <td t-if="has_serial_number and move_line.lot_name" groups="stock.group_lot_on_delivery_slip">
+                                    <span t-field="move_line.lot_name"/>
+                                </td>
+                                <td t-elif="has_serial_number" groups="stock.group_lot_on_delivery_slip">
+                                    <span t-field="move_line.lot_id.name"/>
+                                </td>
+                                <td class="text-center">
+                                    <span t-esc="'%.2f' % move_line.qty_done"/>
+                                    <span t-field="move_line.product_uom_id"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p>
+                        <t t-if="o.backorder_ids and o.backorder_ids.filtered(lambda x: x.state not in ('done', 'cancel'))">
+                            All items couldn't be shipped, the remaining ones will be shipped as soon as they become available.
+                        </t>
+                    </p>
+                    <span style="margin-top: 50px; color: #eee">..</span>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_delivery_order_template_mobile">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="sunmi_print.delivery_order_template_mobile_document" t-lang="lang"/>
+            </t>
+        </t>
+    </template>
+</odoo>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="sunmi_print.invoice_template_mobile_document">
+        <t t-call-assets="sunmi_print.sunmi_report_style" t-js="False"/>
+        <t t-call-assets="sunmi_print.sunmi_report_style" t-css="False"/>
+        <t t-call="sunmi_print.sunmi_print_layout">
+            <t t-set="o" t-value="o.with_context(lang=lang)" />
+            <div style="padding-top: 25px;">
+                <div class="row">
+                    <t t-set="address">
+                    <address t-field="o.partner_id" t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}' />
+                        <div t-if="o.partner_id.vat" class="mt16">
+                            <t t-if="o.company_id.country_id.vat_label" t-esc="o.company_id.country_id.vat_label" id="inv_tax_id_label"/>
+                            <t t-else="">Tax ID</t>: <span t-field="o.partner_id.vat"/></div>
+                    </t>
+
+                    <h6>
+                        <strong t-if="o.type == 'out_invoice' and o.state == 'posted'">Invoice</strong>
+                        <strong t-if="o.type == 'out_invoice' and o.state == 'draft'">Draft Invoice</strong>
+                        <strong t-if="o.type == 'out_invoice' and o.state == 'cancel'">Cancelled Invoice</strong>
+                        <strong t-if="o.type == 'out_refund'">Credit Note</strong>
+                        <strong t-if="o.type == 'in_refund'">Vendor Credit Note</strong>
+                        <strong t-if="o.type == 'in_invoice'">Vendor Bill</strong>
+                        <strong t-if="o.name != '/'" t-field="o.name"/>
+                    </h6>
+
+                    <table style="width: 100%;">
+                        <tr t-if="o.invoice_date" name="invoice_date">
+                            <td>Invoice Date: <span t-field="o.invoice_date" t-options='{"format": "dd/MM/yyyy"}'/></td>
+                        </tr>
+                        <tr t-if="o.invoice_date_due and o.type == 'out_invoice' and o.state == 'posted'" name="due_date">
+                            <td>Due Date: <span t-field="o.invoice_date_due" t-options='{"format": "dd/MM/yyyy"}'/></td>
+                        </tr>
+                        <tr t-if="o.invoice_origin" name="origin">
+                            <td>Source: <span t-field="o.invoice_origin"/></td>
+                        </tr>
+                        <tr t-if="o.partner_id.ref" name="customer_code">
+                            <td>Customer Code: <span t-field="o.partner_id.ref"/></td>
+                        </tr>
+                        <tr t-if="o.ref" name="reference">
+                            <td>Reference: <span t-field="o.ref"/></td>
+                        </tr>
+                    </table>
+                </div>
+                <t t-set="display_discount" t-value="any([l.discount for l in o.invoice_line_ids])"/>
+
+                <div class="row">
+                    <t t-if="o.invoice_line_ids">
+                        <table class="sunmi-table">
+                            <thead>
+                                <tr class="border-dashed">
+                                    <th><strong>Description</strong></th>
+                                    <th class="text-center"><strong>Price</strong></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="o.invoice_line_ids.sorted(key=lambda l: (-l.sequence, l.date, l.move_name, -l.id), reverse=True)" t-as="line">
+                                    <tr>
+                                        <td>
+                                            <span t-field="line.name" t-options="{'widget': 'text'}"/>
+                                            <span style="color: #444;"><t t-esc="line.quantity"/> x <t t-esc="line.price_unit" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                                <t t-if="line.discount"><p>[Disc-<span t-field="line.discount"/>%]</p></t></span>
+                                        </td>
+                                        <td class="text-right align-text-top"><span t-field="line.price_subtotal" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </t>
+                    <t t-else="">
+                        <h6 class="text-center" style="margin-top: 20px;">There is no items</h6>
+                    </t>
+                </div>
+                <div id="total" class="row" name="total">
+                    <table class="sunmi-table">
+                        <tr class="border-dashed">
+                            <td><strong>Subtotal</strong></td>
+                            <td class="text-right">
+                                <span t-field="o.amount_untaxed"/>
+                            </td>
+                        </tr>
+                        <t t-foreach="o.amount_by_group" t-as="amount_by_group">
+                            <tr style="">
+                                <t t-if="len(o.line_ids.filtered(lambda line: line.tax_line_id)) == 1 and o.amount_untaxed == amount_by_group[2]">
+                                    <td><span t-esc="amount_by_group[0]"/></td>
+                                    <td class="text-right o_price_total">
+                                        <span t-esc="amount_by_group[3]" />
+                                    </td>
+                                </t>
+                                <t t-else="">
+                                    <td>
+                                        <span t-esc="amount_by_group[0]"/>
+                                        <span>&amp;nbsp;<span>on</span>
+                                            <t t-esc="amount_by_group[4]"/>
+                                        </span>
+                                    </td>
+                                    <td class="text-right o_price_total">
+                                        <span t-esc="amount_by_group[3]"/>
+                                    </td>
+                                </t>
+                            </tr>
+                        </t>
+                        <tr class="border-dashed">
+                            <td><strong>Total</strong></td>
+                            <td class="text-right">
+                                <span t-field="o.amount_total"/>
+                            </td>
+                        </tr>
+                    </table>
+                    <span style="margin-top: 50px; color: #eee">..</span>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_invoice_template_mobile">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="sunmi_print.invoice_template_mobile_document" t-lang="lang"/>
+            </t>
+        </t>
+    </template>
+</odoo>
